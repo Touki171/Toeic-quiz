@@ -8,7 +8,7 @@ import datetime as dt
 import json
 from pathlib import Path
 
-from registry import validate
+from registry import day, validate
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -29,10 +29,15 @@ def import_package(registry, package, *, select=False):
         raise ValueError('Part 7のpassageIdが一致しません')
     if any(q.get('passageId') is not None for q in questions if q.get('part') == 5):
         raise ValueError('Part 5のpassageIdはnullが必要です')
-    date = dt.datetime.now(dt.timezone(dt.timedelta(hours=9))).date().isoformat()
+    today = dt.datetime.now(dt.timezone(dt.timedelta(hours=9))).date()
+    date = today.isoformat()
     for item in passages + questions:
-        if item.get('createdAt') != date:
-            raise ValueError('createdAtは登録当日の日本時間の日付にしてください: ' + date)
+        try:
+            created = day(item.get('createdAt'))
+        except (TypeError, ValueError):
+            raise ValueError('createdAtは有効な日付（YYYY-MM-DD）が必要です') from None
+        if created > today:
+            raise ValueError('createdAtに未来日は指定できません（登録日以前が必要です）: ' + date)
         if item.get('publishedAt', 'missing') is not None or item.get('publicationDates') != []:
             raise ValueError('未公開問題には publishedAt:null と publicationDates:[] が必要です')
     result = copy.deepcopy(registry)
