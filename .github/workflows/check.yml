@@ -1,0 +1,21 @@
+name: Validate study material
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 -m unittest discover -s tests -v
+      - run: python3 scripts/registry.py
+      - run: python3 scripts/build.py
+# Validation only. No Pages configuration, deployment, or publish artifact.
